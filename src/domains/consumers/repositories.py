@@ -56,9 +56,17 @@ class ConsumerRepository:
         )
         if not consumer:
             return None
+        if 'email' in update_data and update_data['email'] is not None:
+            existing_consumer = await ConsumerRepository.get_consumer_by_email(
+                update_data["email"],
+                db,
+            )
+            if existing_consumer and existing_consumer.id != consumer_id:
+                raise ValueError("Consumer with this email already exists")
 
         for key, value in update_data.items():
-            setattr(consumer, key, value)
+            if value is not None:
+                setattr(consumer, key, value)
 
         await db.commit()
         await db.refresh(consumer)

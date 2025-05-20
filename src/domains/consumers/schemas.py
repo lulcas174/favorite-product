@@ -1,4 +1,4 @@
-from typing import Mapping
+from typing import List, Mapping
 import uuid
 
 from pydantic import BaseModel, Field
@@ -25,14 +25,15 @@ class ConsumerCreate(ConsumerBase):
     pass
 
 
-class ConsumerUpdate(ConsumerBase):
-    pass
+class ConsumerUpdate(BaseModel):
+    name: str | None = None
+    email: str | None = None
 
 
 class ConsumerResponse(BaseModel):
     id: uuid.UUID
-    name: str
-    email: str
+    name: str | None = None
+    email: str | None = None
     favorites: list[ProductDetails] = []
 
     @classmethod
@@ -53,7 +54,7 @@ class ConsumerResponse(BaseModel):
 
 
 class FavoriteCreate(BaseModel):
-    product_id: str = Field(..., min_length=1)
+    product_ids: List[str] = Field(..., min_items=1)
 
 
 class PaginatedConsumerResponse(BaseModel):

@@ -36,6 +36,6 @@ async def test_register_email_exists(async_client: AsyncClient, mocker):
     response = await async_client.post("api/v1/auth/register", json=test_data)
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "Email já cadastrado"
+    assert response.json()["detail"] == "Email already registered"
     mock_session.add.assert_not_called()
     app.dependency_overrides.clear()

@@ -84,17 +84,25 @@ async def update_consumer(
     update_data: ConsumerUpdate,
     db: AsyncSession = Depends(get_db),
 ):
-    updated = await ConsumerRepository.update_consumer(
-        consumer_id,
-        update_data.dict(),
-        db,
-    )
-    if not updated:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Consumer not found",
+    try:
+        updated = await ConsumerRepository.update_consumer(
+            consumer_id,
+            update_data.dict(exclude_unset=True),
+            db,
         )
-    return await ConsumerService.retrive_consumer(updated)
+        if not updated:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Consumer not found",
+            )
+        return await ConsumerService.retrive_consumer(updated)
+    except ValueError as e:
+        if "Consumer with this email already exists" in str(e):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e),
+            )
+        raise
 
 
 @router.delete("/{consumer_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -114,7 +122,7 @@ async def delete_consumer(
     "/{consumer_id}/favorites",
     status_code=status.HTTP_201_CREATED,
 )
-async def add_favorite(
+async def add_favorites(
     consumer_id: UUID,
     favorite_data: FavoriteCreate,
     db: AsyncSession = Depends(get_db),
@@ -126,40 +134,41 @@ async def add_favorite(
             detail="Consumer not found"
         )
 
-    product = await ProductsService.get_product_by_id(favorite_data.product_id)
-    if not product:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Product not found"
-        )
+    added = []
+    already_exists = []
+    not_found = []
 
-    existing = await FavoriteRepository.get_favorite_by_product(
-        consumer_id,
-        favorite_data.product_id,
-        db
-    )
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Product already in favorites"
-        )
+    for product_id in favorite_data.product_ids:
+        product = await ProductsService.get_product_by_id(product_id)
+        if not product:
+            not_found.append(product_id)
+            continue
 
-    try:
-        await FavoriteRepository.create_favorite(
-            consumer_id=consumer_id,
-            product_id=favorite_data.product_id,
-            db=db
+        existing = await FavoriteRepository.get_favorite_by_product(
+            consumer_id,
+            product_id,
+            db
         )
-    except IntegrityError:
-        await db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Duplicate favorite"
-        )
+        if existing:
+            already_exists.append(product_id)
+            continue
+
+        try:
+            await FavoriteRepository.create_favorite(
+                consumer_id=consumer_id,
+                product_id=product_id,
+                db=db
+            )
+            added.append(product_id)
+        except IntegrityError:
+            await db.rollback()
+            already_exists.append(product_id)
 
     return {
-        "message": "Favorite added successfully",
-        "product_id": favorite_data.product_id,
+        "message": "Favorites added successfully",
+        "added": added,
+        "already_exists": already_exists,
+        "not_found": not_found
     }
 
 
@@ -196,3 +205,57 @@ async def remove_favorite(
 
     await FavoriteRepository.delete_favorite(favorite, db)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.patch(
+    "update/favorites/{consumer_id}",
+    status_code=status.HTTP_200_OK,
+)
+async def update_favorites(
+    consumer_id: UUID,
+    favorite_data: FavoriteCreate,
+    db: AsyncSession = Depends(get_db),
+):
+    consumer = await ConsumerRepository.get_consumer_by_id(consumer_id, db)
+    if not consumer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Consumer not found"
+        )
+
+    added = []
+    already_exists = []
+    not_found = []
+
+    for product_id in favorite_data.product_ids:
+        product = await ProductsService.get_product_by_id(product_id)
+        if not product:
+            not_found.append(product_id)
+            continue
+
+        existing = await FavoriteRepository.get_favorite_by_product(
+            consumer_id,
+            product_id,
+            db
+        )
+        if existing:
+            already_exists.append(product_id)
+            continue
+
+        try:
+            await FavoriteRepository.create_favorite(
+                consumer_id=consumer_id,
+                product_id=product_id,
+                db=db
+            )
+            added.append(product_id)
+        except IntegrityError:
+            await db.rollback()
+            already_exists.append(product_id)
+
+    return {
+        "message": "Favorites updated successfully",
+        "added": added,
+        "already_exists": already_exists,
+        "not_found": not_found
+    }
