@@ -60,6 +60,9 @@ docker-compose ps
 - PostgreSQL instalado na maquina
 - Python 3.12
 - pip (gerenciador de pacotes Python)
+- Será necessário modificar o ``POSTGRES_HOST`` no seu .env para o IP do seu banco local, caso deseje usar o docker + aplicação local, rode
+``docker compose up db`` e depois ``docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}` nome_ou_id_container`` 
+- Substitua no .env
 Para executar a aplicação localmente, também será necessário configurar as variáveis de ambiente conforme descrito anteriormente.
 
 #### Criação e ativação do ambiente virtual
