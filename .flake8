@@ -1,0 +1,34 @@
+[flake8]
+max-line-length = 83
+ignore =
+    E203,
+    W503,
+    E266,
+    E402,
+    D1, D2, D3, D4
+
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    env,
+    migrations,
+    versions,
+    scripts,
+    dist,
+    build,
+    .tox,
+    *.cfg,
+    *.md,
+    *.toml,
+    *.json,
+    *.yml,
+    *.yaml,
+    Makefile
+
+filename = *.py
+
+statistics = True
+count = True
+show-source = True

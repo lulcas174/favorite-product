@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.egg-info/
+dist/
+build/
+*.egg
+
+# FastAPI / Uvicorn logs
+*.log
+
+# Virtual environment
+venv/
+env/
+.venv/
+ENV/
+.env/
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.*
+
+# MyPy, Pylint, Coverage
+.mypy_cache/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.cache/
+.tox/
+
+# Docker
+*.pid
+*.db
+*.sqlite3
+
+# VS Code settings and launch configs
+.vscode/
+
+# Jupyter (caso use notebooks no projeto)
+.ipynb_checkpoints/
+
+# PyInstaller
+*.spec
